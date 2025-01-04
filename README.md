@@ -1,0 +1,1 @@
+# HomeAssistant_NewsbinPro_Integration
