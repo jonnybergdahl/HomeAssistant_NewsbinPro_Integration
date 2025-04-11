@@ -1,41 +1,45 @@
-from homeassistant.components.switch import SwitchEntity
-from .const import DOMAIN
-from .coordinator import NewsbinProCoordinator
+import logging
+from datetime import timedelta
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo, DeviceEntryType
+from .const import DOMAIN, UPDATE_INTERVAL
+from newsbinpro_client import NewsbinProClient, NewsbinProStatus
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
-    coordinator: NewsbinProCoordinator = hass.data[DOMAIN]
-    entities = [
-        NewsbinProSwitch(coordinator, "limiter", "Bandwidth Limiter"),
-        NewsbinProSwitch(coordinator, "paused", "Paused"),
-    ]
-    async_add_entities(entities)
+_LOGGER = logging.getLogger(__name__)
 
-class NewsbinProSwitch(SwitchEntity):
-    def __init__(self, coordinator, key, name):
-        self.coordinator = coordinator
-        self._attr_name = name
-        self._attr_unique_id = f"{DOMAIN}_{key}"
-        self._key = key
-        self._attr_device_info = coordinator.device_info
+class NewsbinProCoordinator(DataUpdateCoordinator):
+    def __init__(self, hass: HomeAssistant, config_entry):
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+            update_interval=timedelta(seconds=UPDATE_INTERVAL),
+        )
+        self.config_entry = config_entry
+        self.client = NewsbinProClient(config_entry.data["host"], config_entry.data["port"], config_entry.data["password"])
 
-    @property
-    def is_on(self):
-        return self.coordinator.data.get(self._key)
+    async def _async_update_data(self):
+        try:
+            if not self.client.connected:
+                await self.client.connect()
 
-    async def async_turn_on(self, **kwargs):
-        if self._key == "limiter":
-            await self.coordinator.client.set_limiter_enabled(True)
-        elif self._key == "paused":
-            await self.coordinator.client.set_paused(True)
-        await self.coordinator.async_request_refresh()
+            statistics: NewsbinProStatus = await self.client.get_status()
+            files_count = await self.client.get_files_count()
+            downloads_count = await self.client.get_downloads_count()
+            paused =  await self.client.get_paused_state()
+            limiter = await self.client.get_bandwidth_limiter_state()
 
-    async def async_turn_off(self, **kwargs):
-        if self._key == "limiter":
-            await self.coordinator.client.set_limiter_enabled(False)
-        elif self._key == "paused":
-            await self.coordinator.client.set_paused(False)
-        await self.coordinator.async_request_refresh()
-
-    @property
-    def should_poll(self):
-        return False
+            return {
+                "version": self.client.newsbin_version,
+                "speed": statistics.speed,
+                "data_free": round(statistics.data_folder_free_space / (1024 * 1024), 3),
+                "download_free": round(statistics.download_folder_free_space / (1024 * 1024), 3),
+                "files_count": files_count,
+                "downloads_count": downloads_count,
+                "paused": paused,
+                "limiter": limiter,
+            }
+        except Exception as err:
+            _LOGGER.exception("Error fetching data from NewsbinPro: %s", err)
+            raise

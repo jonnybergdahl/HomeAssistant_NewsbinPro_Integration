@@ -2,8 +2,9 @@ from homeassistant import config_entries
 import voluptuous as vol
 from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError
-from .const import DOMAIN
+from .const import DOMAIN, DEFAULT_PORT
 from newsbinpro_client import NewsbinProClient
+import logging
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,14 +17,12 @@ class NewsbinProConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 await self._validate_input(user_input)
                 return self.async_create_entry(title="NewsbinPro", data=user_input)
-            except CannotConnect:
-                errors["base"] = "cannot_connect"
             except Exception as ex:  # noqa: B902
                 errors["base"] = str(ex)
 
         data_schema = vol.Schema({
             vol.Required("host"): str,
-            vol.Required("port", default=8000): int,
+            vol.Required("port", default=DEFAULT_PORT): int,
             vol.Required("password"): str,
         })
 
@@ -35,13 +34,7 @@ class NewsbinProConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _validate_input(self, data):
         """Try to connect to the NewsbinPro server to validate the credentials."""
-        import NewsbinProClient
-        client = NewsbinProClient(
-            host=data["host"],
-            port=data["port"],
-            password=data["password"]
-        )
-
+        client = NewsbinProClient(data["host"], data["port"], data["password"])
         await client.connect()
         await client.disconnect()
 
@@ -60,7 +53,7 @@ class NewsbinProOptionsFlowHandler(config_entries.OptionsFlow):
 
         data_schema = vol.Schema({
             vol.Required("host", default=self.config_entry.data.get("host", "")): str,
-            vol.Required("port", default=self.config_entry.data.get("port", 8000)): int,
+            vol.Required("port", default=self.config_entry.data.get("port", DEFAULT_PORT)): int,
             vol.Required("password", default=self.config_entry.data.get("password", "")): str,
         })
 

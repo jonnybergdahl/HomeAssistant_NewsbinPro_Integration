@@ -1,13 +1,14 @@
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 from homeassistant.helpers.entity import EntityCategory
-from .const import DOMAIN
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from .const import DOMAIN, DEVICE_INFO
 from .coordinator import NewsbinProCoordinator
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     coordinator: NewsbinProCoordinator = hass.data[DOMAIN]
     entities = [
         NewsbinProSensor(coordinator, "version", "NewsbinPro Version", config_entry),
-        NewsbinProSensor(coordinator, "speed", "Current Speed", config_entry, "Mbps", SensorDeviceClass.DATA_RATE),
+        NewsbinProSensor(coordinator, "speed", "Current Speed", config_entry, "bps", SensorDeviceClass.DATA_RATE),
         NewsbinProSensor(coordinator, "data_free", "Data Folder Free", config_entry, "GB", SensorDeviceClass.DATA_SIZE),
         NewsbinProSensor(coordinator, "download_free", "Download Folder Free", config_entry, "GB", SensorDeviceClass.DATA_SIZE),
         NewsbinProSensor(coordinator, "files_count", "Files Count", config_entry, None, SensorDeviceClass.ENUM),
@@ -15,21 +16,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     ]
     async_add_entities(entities)
 
-class NewsbinProSensor(SensorEntity):
+class NewsbinProSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator, key, name, config_entry, unit=None, device_class=None):
+        super().__init__(coordinator)
         self.coordinator = coordinator
         self._attr_name = name
         self._attr_unique_id = f"{DOMAIN}_{key}"
         self._key = key
         self._attr_native_unit_of_measurement = unit
         self._attr_device_class = device_class
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "NewsbinPro",
-            "manufacturer": "DJI",
-            "model": "NewsbinPro Client",
-            "entry_type": "service"
-        }
+        self._attr_device_info = DEVICE_INFO
 
     @property
     def native_value(self):
