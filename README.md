@@ -56,3 +56,9 @@ You can also do this manually:
 6. Enter the IP address (or host name), port and password of the device.
 
 And that's it! You should now be able to see its status and control it from the Home Assistant web interface.
+
+## Getting help
+
+You can file bugs in the [issues section on Github](https://github.com/jonnybergdahl/HomeAssistant_NewsbinPro_Integration/issues).
+
+You can also reach me at [#jonnys-place](https://discord.gg/SeHKWPu9Cw) on Brian Lough's Discord.
