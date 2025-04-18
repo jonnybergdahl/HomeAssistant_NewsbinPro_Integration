@@ -8,7 +8,7 @@
     "iot_class": "local_polling",
     "issue_tracker": "https://github.com/jonnybergdahl/homeassistant_newsbinpro_integration/issues",
     "requirements": [
-      "newsbinpro-client==1.0.2"
+      "newsbinpro-client==1.0.3"
     ],
-    "version": "1.0.0"
+    "version": "1.0.1"
 }
