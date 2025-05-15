@@ -1,7 +1,0 @@
-{
-  "name": "Newsbin Pro",
-  "render_readme": true,
-  "domains": ["newsbinpro"],
-  "country": "SE",
-  "homeassistant": "2023.1.0"
-}

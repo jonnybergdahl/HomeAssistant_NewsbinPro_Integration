@@ -8,7 +8,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     coordinator: NewsbinProCoordinator = hass.data[DOMAIN]
     entities = [
         NewsbinProSensor(coordinator, "version", "NewsbinPro Version", config_entry),
-        NewsbinProSensor(coordinator, "speed", "Current Speed", config_entry, "bps", SensorDeviceClass.DATA_RATE),
+        NewsbinProSensor(coordinator, "speed", "Current Speed", config_entry, "bit/s", SensorDeviceClass.DATA_RATE),
         NewsbinProSensor(coordinator, "data_free", "Data Folder Free", config_entry, "GB", SensorDeviceClass.DATA_SIZE),
         NewsbinProSensor(coordinator, "download_free", "Download Folder Free", config_entry, "GB", SensorDeviceClass.DATA_SIZE),
         NewsbinProSensor(coordinator, "files_count", "Files Count", config_entry, None, SensorDeviceClass.ENUM),
